@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IS1310 · Final Scenario Drill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F8F7;
+    --card:#FFFFFF;
+    --ink:#1C2B30;
+    --muted:#5C6F75;
+    --teal:#3E7385;
+    --teal-deep:#27505F;
+    --teal-soft:#E5EEF1;
+    --line:#DAE3E1;
+    --good:#2E7D52;
+    --good-bg:#EAF4EE;
+    --bad:#BF4B3D;
+    --bad-bg:#F9ECEA;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 14px 56px}
+  .wrap{width:100%;max-width:740px}
+
+  /* ---------- header ---------- */
+  header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+  .cube{flex:none}
+  .titles h1{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(20px,4.5vw,26px);letter-spacing:-.01em;line-height:1.1}
+  .titles p{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .scorepill{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:13px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 14px;white-space:nowrap}
+  .scorepill b{color:var(--teal-deep)}
+
+  /* ---------- chapter chips ---------- */
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;scrollbar-width:thin}
+  .chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 12px;cursor:pointer;text-align:left;transition:border-color .15s,background .15s}
+  .chip .tag{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--teal);display:block;letter-spacing:.06em}
+  .chip .lbl{font-size:13px;font-weight:600}
+  .chip:hover{border-color:var(--teal)}
+  .chip.active{background:var(--teal-deep);border-color:var(--teal-deep)}
+  .chip.active .tag{color:#BFD9E2}
+  .chip.active .lbl{color:#fff}
+  .chip:focus-visible,button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+
+  /* ---------- question card ---------- */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:clamp(18px,4vw,30px);box-shadow:0 1px 2px rgba(28,43,48,.04)}
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.08em;color:var(--teal);text-transform:uppercase;display:flex;justify-content:space-between;gap:10px;margin-bottom:14px}
+  .scenario{border-left:3px solid var(--teal);background:var(--teal-soft);padding:12px 16px;border-radius:0 8px 8px 0;font-size:14.5px;line-height:1.65;color:#2B3E45;margin-bottom:16px}
+  .question{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(16px,3.6vw,19px);line-height:1.4;margin-bottom:16px}
+  .opts{display:flex;flex-direction:column;gap:9px}
+  .opt{display:flex;align-items:flex-start;gap:11px;width:100%;text-align:left;background:var(--paper);border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;font-size:14.5px;line-height:1.5;cursor:pointer;font-family:inherit;color:var(--ink);transition:border-color .12s,background .12s}
+  .opt:hover:not(:disabled){border-color:var(--teal);background:#fff}
+  .opt:disabled{cursor:default}
+  .key{flex:none;font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--muted);border:1px solid var(--line);border-radius:6px;width:22px;height:22px;display:grid;place-items:center;background:#fff;margin-top:1px}
+  .opt.good{border-color:var(--good);background:var(--good-bg)}
+  .opt.good .key{border-color:var(--good);color:var(--good)}
+  .opt.bad{border-color:var(--bad);background:var(--bad-bg)}
+  .opt.bad .key{border-color:var(--bad);color:var(--bad)}
+  .opt.dim{opacity:.55}
+
+  .why{display:none;margin-top:16px;border-radius:10px;padding:13px 16px;font-size:13.5px;line-height:1.65}
+  .why.show{display:block}
+  .why.ok{background:var(--good-bg);border:1px solid #BFDCCB;color:#1F5C3C}
+  .why.no{background:var(--bad-bg);border:1px solid #ECC8C1;color:#8E392E}
+  .why b{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;display:block;margin-bottom:4px}
+
+  .actions{display:flex;justify-content:flex-end;margin-top:16px;min-height:42px}
+  .next{display:none;background:var(--teal-deep);color:#fff;border:none;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
+  .next:hover{background:var(--teal)}
+  .next.show{display:inline-block}
+
+  /* ---------- progress: stacked architecture layers ---------- */
+  .progress{display:flex;gap:3px;margin-top:16px}
+  .seg{height:9px;flex:1;background:var(--line);transform:skewX(-14deg);border-radius:2px;transition:background .2s}
+  .seg.ok{background:var(--good)}
+  .seg.no{background:var(--bad)}
+  .seg.cur{background:var(--teal)}
+  .progress-label{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);text-align:right;margin-top:6px}
+
+  /* ---------- results ---------- */
+  .results{display:none}
+  .results.show{display:block}
+  .bigscore{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(38px,9vw,56px);color:var(--teal-deep);line-height:1}
+  .bigscore small{font-size:.42em;color:var(--muted);font-weight:500}
+  .verdict{font-size:14px;color:var(--muted);margin:8px 0 22px}
+  .chrow{display:grid;grid-template-columns:128px 1fr 52px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13px}
+  .chrow:last-of-type{border-bottom:none}
+  .chrow .nm{font-weight:600}
+  .chrow .nm span{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--teal);display:block}
+  .bar{height:9px;background:var(--paper);border:1px solid var(--line);border-radius:99px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--teal);border-radius:99px}
+  .bar i.low{background:var(--bad)}
+  .pct{font-family:"IBM Plex Mono",monospace;font-size:12px;text-align:right}
+  .weak{margin-top:18px;border:1px solid #ECC8C1;background:var(--bad-bg);border-radius:10px;padding:13px 16px;font-size:13.5px;line-height:1.6;color:#7E352B}
+  .weak b{display:block;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;margin-bottom:4px}
+  .res-actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+  .btn{border-radius:10px;padding:11px 18px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
+  .btn.primary{background:var(--teal-deep);color:#fff;border:none}
+  .btn.primary:hover{background:var(--teal)}
+  .btn.ghost{background:#fff;color:var(--teal-deep);border:1.5px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--teal)}
+
+  .hint{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);text-align:center;margin-top:14px}
+  @media (max-width:520px){.hint{display:none}.chrow{grid-template-columns:104px 1fr 44px}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <svg class="cube" width="42" height="42" viewBox="0 0 42 42" aria-hidden="true">
+      <g transform="skewX(-14) translate(8,0)">
+        <rect x="4" y="4"  width="26" height="6.5" rx="1.5" fill="#27505F"/>
+        <rect x="4" y="13" width="26" height="6.5" rx="1.5" fill="#3E7385"/>
+        <rect x="4" y="22" width="26" height="6.5" rx="1.5" fill="#6E9AA8"/>
+        <rect x="4" y="31" width="26" height="6.5" rx="1.5" fill="#B9CFD7"/>
+      </g>
+    </svg>
+    <div class="titles">
+      <h1>IS1310 · Final Scenario Drill</h1>
+      <p>Bernard, An Introduction to Enterprise Architecture · 8 chapters · answer first, then check</p>
+    </div>
+    <div class="scorepill" id="scorepill"><b id="scoreNum">0</b>/<span id="scoreOf">0</span></div>
+  </header>
+
+  <div class="chips" id="chips" role="tablist" aria-label="Chapter filter"></div>
+
+  <div class="card" id="quizCard">
+    <div class="eyebrow"><span id="qTag">—</span><span id="qCount">—</span></div>
+    <p class="scenario" id="qScenario"></p>
+    <p class="question" id="qText"></p>
+    <div class="opts" id="qOpts"></div>
+    <div class="why" id="qWhy" aria-live="polite"></div>
+    <div class="actions"><button class="next" id="nextBtn">Next →</button></div>
+    <div class="progress" id="progress"></div>
+    <div class="progress-label" id="progressLabel"></div>
+  </div>
+
+  <div class="card results" id="resultsCard">
+    <div class="eyebrow"><span>SESSION COMPLETE</span><span id="rMode"></span></div>
+    <div class="bigscore"><span id="rScore">0%</span> <small id="rRaw"></small></div>
+    <p class="verdict" id="rVerdict"></p>
+    <div id="rChapters"></div>
+    <div class="weak" id="rWeak" style="display:none"></div>
+    <div class="res-actions">
+      <button class="btn primary" id="retryWrongBtn">Retry wrong answers</button>
+      <button class="btn ghost" id="restartBtn">Restart this set</button>
+    </div>
+  </div>
+
+  <p class="hint">Keyboard: <b>1–4</b> to answer · <b>Enter</b> for next</p>
+</div>
+
+<script>
+/* ------------------------------------------------------------------ */
+/*  QUESTION BANK — grounded in the IS1310 chapter slides (Bernard,    */
+/*  An Introduction to Enterprise Architecture, 3rd ed.)               */
+/* ------------------------------------------------------------------ */
+const CHAPTERS = {
+  1:{short:"CH1", label:"EA Overview"},
+  2:{short:"CH2", label:"Value & Risk"},
+  3:{short:"CH3", label:"Methodology"},
+  4:{short:"CH4", label:"Frameworks"},
+  5:{short:"CH5", label:"Current & Future"},
+  6:{short:"CH6", label:"BPMN"},
+  7:{short:"CH7", label:"EA Mgmt Plan"},
+  8:{short:"CH8", label:"Security & Privacy"}
+};
+
+const BANK = [
+/* ---------------- CH1 · EA Overview ---------------- */
+{ch:1, scenario:"Najm Logistics runs three lines of business: Freight, Warehousing, and Customs Brokerage. All three rely on the same enterprise email system and the same HR system.",
+ q:"In EA terms, the email and HR systems are best classified as:",
+ opts:["Vertical components","Horizontal (crosscutting) components","Architecture segments","Planning threads"], a:1,
+ why:"They serve several lines of business at once, which is the definition of a horizontal (crosscutting) component. A vertical component serves only one LOB."},
+
+{ch:1, scenario:"The Chief Architect documents the Customs Brokerage line of business at all five framework levels plus the three threads, so this part of the EA can stand alone.",
+ q:"What is this stand-alone part of the overall EA called?",
+ opts:["A crosscutting component","An EA artifact","An architecture segment","A planning thread"], a:2,
+ why:"A segment is a part of the overall EA that documents one or more LOBs at all levels and threads, and can exist as a stand-alone part of the EA. The LOB is the activity area itself; the segment is its documented architecture."},
+
+{ch:1, scenario:"A CEO complains that IT keeps buying technology first and then searching for a business use. The new Chief Architect proposes that strategy should drive business requirements, which in turn drive technology solutions.",
+ q:"Which core EA idea is the architect describing?",
+ opts:["EA = Strategy + Business + Technology alignment","The EA Sequencing Plan","Configuration management","A line of business"], a:0,
+ why:"This is the EA = S + B + T equation: strategic goals drive business services, and business requirements drive technology solutions — the central alignment idea of Chapter 1."},
+
+{ch:1, scenario:"While reviewing the documentation approach, an analyst notes that security, standards, and workforce skills must appear at every level of the framework — not as one separate layer.",
+ q:"Which of the six basic EA documentation elements is being described?",
+ opts:["EA components","Planning threads","The current architecture","The EA Management Plan"], a:1,
+ why:"Element #6 is the planning threads — security, standards, and skills — common activities that pervade all levels of the framework."},
+
+/* ---------------- CH2 · Value & Risk ---------------- */
+{ch:2, scenario:"An EA team finishes documenting the architecture, but line-of-business managers were never consulted during development. Six months later, nobody outside the EA team opens the repository.",
+ q:"Which EA risk has materialized?",
+ opts:["Schedule delays","Loss of key personnel","Lack of stakeholder buy-in","First-adopter technology risk"], a:2,
+ why:"A key risk is that the EA will not be used if stakeholders don't buy in to its value — which is exactly why the methodology's Phase I includes a Communication Plan to gain buy-in."},
+
+{ch:2, scenario:"After building current views, executives discover that Sales and Customer Service each bought a separate CRM that does nearly the same job. They merge the two and cut licensing costs.",
+ q:"Which area of EA value does this illustrate?",
+ opts:["Identifying duplicative capabilities through enterprise-wide thinking","Replacing the need for strategic planning","Guaranteeing zero project risk","Faster network bandwidth"], a:0,
+ why:"EA promotes enterprise-wide (not systems-level) thinking about resource use, and one of its key value areas is revealing duplication in functional capability, which generates savings."},
+
+{ch:2, scenario:"Midway through documentation, the only architect who understands the modeling tools and the framework resigns, stalling the program for months.",
+ q:"Which implementation risk type does this represent?",
+ opts:["Lack of executive support","Loss of key personnel","Tool and repository costs","Lack of documentation standards"], a:1,
+ why:"EA requires architects, analysts, developers, and programmers; losing team members with those skills creates delays and added cost — the 'loss of key personnel' risk type."},
+
+/* ---------------- CH3 · Implementation Methodology ---------------- */
+{ch:3, scenario:"A retailer decides to start an EA program. It appoints a Chief Architect and issues an EA Communication Plan to win stakeholder support — before any documentation begins.",
+ q:"Which phase of the EA implementation methodology is this?",
+ opts:["Phase I: EA Program Establishment","Phase II: Framework and Tool Selection","Phase III: Documentation of the EA","Phase IV: Use and Maintain the EA"], a:0,
+ why:"Steps 1 and 4 of Phase I: establish the program and identify a Chief Architect, then develop a Communication Plan to gain stakeholder buy-in. Phase I is pre-documentation."},
+
+{ch:3, scenario:"The EA team is comparing Zachman, TOGAF, and EA3, identifying the enterprise's lines of business and crosscuts, and choosing an online repository.",
+ q:"Which phase are they in?",
+ opts:["Phase I: EA Program Establishment","Phase II: Framework and Tool Selection","Phase III: Documentation of the EA","Phase IV: Use and Maintain the EA"], a:1,
+ why:"Phase II (Steps 5–10) covers selecting the framework, identifying LOBs/crosscuts, choosing documentation methods, and selecting tools and the EA repository."},
+
+{ch:3, scenario:"The team writes several future business/technology operating scenarios, lists planning assumptions for each, and stores the resulting artifacts in the online repository.",
+ q:"Which phase do these activities belong to?",
+ opts:["Phase I: EA Program Establishment","Phase II: Framework and Tool Selection","Phase III: Documentation of the EA","Phase IV: Use and Maintain the EA"], a:2,
+ why:"Phase III (Steps 11–16) is where actual documentation happens: current views, future scenarios (Step 13), planning assumptions (Step 14), future views, and the EA Management Plan."},
+
+{ch:3, scenario:"Two years in: the EA is consulted for every major IT investment decision, current and future views are refreshed regularly, and an updated EA Management Plan is released annually.",
+ q:"Which phase describes this state?",
+ opts:["Phase I: EA Program Establishment","Phase II: Framework and Tool Selection","Phase III: Documentation of the EA","Phase IV: Use and Maintain the EA"], a:3,
+ why:"Phase IV (Steps 17–20): use EA information for planning and decision-making, regularly update views, maintain the repository, and release annual EA Management Plan updates."},
+
+/* ---------------- CH4 · Frameworks ---------------- */
+{ch:4, scenario:"A consultant proposes a documentation schema whose columns ask What, How, Where, Who, When, and Why, with rows representing different audience perspectives from planner down to user.",
+ q:"Which EA framework is this?",
+ opts:["The Zachman Framework","FEAF","TOGAF","The EA3 Cube"], a:0,
+ why:"Zachman's framework is a rows-by-columns schema built on the six interrogatives (what/how/where/who/when/why) across hierarchical audience perspectives, with primitive artifacts in each cell."},
+
+{ch:4, scenario:"A U.S. federal civilian agency is told to adopt the EA framework that was developed specifically for use across federal government agencies.",
+ q:"Which framework is being referred to?",
+ opts:["DoDAF","TEAF","FEAF","TOGAF"], a:2,
+ why:"FEAF is the Federal Enterprise Architecture Framework, built for U.S. federal agencies. DoDAF is for the Department of Defense, TEAF for the Treasury, and TOGAF is The Open Group's framework."},
+
+{ch:4, scenario:"An enterprise wants an open-standard framework maintained by The Open Group, known for its iterative Architecture Development Method (ADM).",
+ q:"Which framework should it choose?",
+ opts:["Zachman","TOGAF","Spewak's EAP","FEAF"], a:1,
+ why:"TOGAF — The Open Group Architecture Framework — is the open-standard framework whose core is the ADM cycle."},
+
+{ch:4, scenario:"A framework models the enterprise as a cube: hierarchical functional levels on one axis, lines of business as depth slices, and the documentation of components as the third dimension.",
+ q:"These three dimensions (levels, segments, artifacts) describe which framework?",
+ opts:["The EA3 Cube Framework","The Zachman Framework","DoDAF","TEAF"], a:0,
+ why:"The EA3 Cube's three dimensions are: (1) Levels — the five hierarchical sub-architectures, (2) Segments — lines of business, and (3) Artifacts — the documentation of components at each level."},
+
+/* ---------------- CH5 · Current & Future Views ---------------- */
+{ch:5, scenario:"Before approving new projects, a CIO asks for a complete 'as-is' inventory of what exists today: goals, business services, information flows, systems, and networks.",
+ q:"Which EA view is the CIO requesting?",
+ opts:["The future architecture view","The current architecture view","The EA Management Plan","An architecture segment"], a:1,
+ why:"The current ('as-is') view is a baseline inventory of existing components and artifacts, used as a reference for planning, asset management, and decision-making — and to reveal gaps against the future view."},
+
+{ch:5, scenario:"Planners write a narrative describing how the company might operate in five years, list explicit planning assumptions for it, and then derive new EA components from that narrative.",
+ q:"Which technique are they using?",
+ opts:["Scenario planning to drive future views","Configuration change requests","Hardware/software inventorying","Business process reengineering"], a:0,
+ why:"Future views are built from future operating scenarios and their planning assumptions (methodology Steps 13–15). The scenarios capture possible operating states that support planning and decision-making."},
+
+{ch:5, scenario:"The future architecture is being revised for three separate reasons: a brand-new strategic goal, a shift in which products the business prioritizes, and the rise of generative-AI platforms.",
+ q:"'The rise of generative-AI platforms' corresponds to which driver of the future architecture?",
+ opts:["New directions and goals","Changing business priorities","Emerging technologies","Annual repository maintenance"], a:2,
+ why:"The future architecture is driven in three ways: new directions and goals, changing business priorities, and emerging technologies. A new technology wave is the third driver."},
+
+/* ---------------- CH6 · BPMN ---------------- */
+{ch:6, scenario:"In a visa-application process model, after the 'Review documents' task the flow goes EITHER to 'Approve' OR to 'Reject' depending on the result — never both.",
+ q:"Which BPMN gateway models this decision?",
+ opts:["Exclusive (XOR) gateway","Parallel (AND) gateway","Inclusive (OR) gateway","Start event"], a:0,
+ why:"An exclusive gateway (diamond, often marked X) routes the token down exactly one outgoing path based on a condition."},
+
+{ch:6, scenario:"When an application is accepted, the process must simultaneously send a payment request AND notify the security-check team — both branches always execute.",
+ q:"Which BPMN gateway is required?",
+ opts:["Exclusive (XOR) gateway","Parallel (AND) gateway","Event-based gateway","End event"], a:1,
+ why:"A parallel gateway (diamond marked +) splits the flow into branches that all execute concurrently, with no condition."},
+
+{ch:6, scenario:"A model has two pools — 'Applicant' and 'Ministry'. The applicant submits a form that the ministry receives. The analyst must pick the correct connector between the two pools.",
+ q:"Which connector is correct?",
+ opts:["A solid sequence flow","A dashed message flow","A lane divider","An association line"], a:1,
+ why:"Communication between separate pools (different participants) uses dashed message flows. Solid sequence flows show ordering of activities and cannot cross pool boundaries."},
+
+{ch:6, scenario:"A process diagram opens with a circle drawn with a thin single border and closes with a circle drawn with a thick border.",
+ q:"What do these two symbols represent?",
+ opts:["A gateway and a task","A start event and an end event","A pool and a lane","A data object and a data store"], a:1,
+ why:"In BPMN, events are circles: a thin border marks the start event and a thick border marks the end event (intermediate events use a double border)."},
+
+/* ---------------- CH7 · EA Management Plan ---------------- */
+{ch:7, scenario:"The CIO requests one living document that explains how the enterprise will manage the transition from the current architecture to the future architecture — 'a blueprint for modernization.'",
+ q:"Which document is being requested?",
+ opts:["The EA Management Plan","The Security and Privacy Plan","The EA Communication Plan","An investment business case"], a:0,
+ why:"The EA Management Plan articulates the transition between current and future views and serves as a modernization blueprint. It is developed in Step 16 and updated annually in Step 20."},
+
+{ch:7, scenario:"Executives want a clear picture of the tasks, milestones, and timeframe for replacing each legacy system over the next three years.",
+ q:"Which part of the EA Management Plan provides this?",
+ opts:["The EA Sequencing Plan","The glossary of terms","The threat summary","The configuration change request form"], a:0,
+ why:"The Sequencing Plan section documents the tasks, milestones, and timeframe for implementing new EA components and artifacts — the schedule for current-to-future transition."},
+
+{ch:7, scenario:"An analyst drafts a table that maps each strategic goal and initiative to the EA components that support it (e.g., 'Be #1 in product service' → service website, customer database).",
+ q:"Where in the EA Management Plan does this mapping belong?",
+ opts:["Part 1: EA program management","Part 2: summary of the current architecture","Part 3: summary of the future architecture","It can only appear in an appendix"], a:1,
+ why:"The current-architecture summary opens by showing how EA components support today's strategic goals and initiatives (section 2.1), giving an integrated view of how current components work together."},
+
+/* ---------------- CH8 · Security & Privacy ---------------- */
+{ch:8, scenario:"A new architect asks whether security should be documented as a sixth level added at the bottom of the EA3 Cube.",
+ q:"What is the correct response?",
+ opts:["Yes — security deserves its own level below infrastructure","No — security is a vertical thread that weaves through all levels","No — security belongs only at the Systems/Applications level","Yes — but only for government enterprises"], a:1,
+ why:"Security is one of the planning threads, not a separate level: it is most effective when it is integral to strategy, business services, information flows, applications, and infrastructure — i.e., woven through every level."},
+
+{ch:8, scenario:"The ministry is structuring its Security and Privacy Program according to the textbook's eight areas, implemented within an enterprise-wide risk management strategy.",
+ q:"Which list correctly names the eight areas?",
+ opts:["Governance, Operations, Personnel, Workflow, Information, Applications, Infrastructure, Physical","Strategy, Business, Data, Systems, Networks, Standards, Skills, Security","Governance, Marketing, Personnel, Encryption, Information, Applications, Cloud, Physical","Planning, Budgeting, Staffing, Auditing, Reporting, Testing, Training, Archiving"], a:0,
+ why:"The Security and Privacy Program comprises eight areas: Governance, Operations, Personnel, Workflow, Information, Applications, Infrastructure, and Physical."},
+
+{ch:8, scenario:"Leadership wants maximum data sharing between agencies; the security manager warns about exposure. They ask what the Risk Management Strategy is fundamentally trying to achieve.",
+ q:"What is the correct answer?",
+ opts:["Eliminating all sharing of information","Finding the right balance between information sharing and information protection","Maximizing protection regardless of business needs","Transferring all risk to a third party"], a:1,
+ why:"The drivers of risk management are the need to integrate and share information alongside the concurrent need to protect it; finding the right balance point is the purpose of the Risk Management Strategy."},
+
+{ch:8, scenario:"Auditors review who can enter the server rooms, wiring closets, and the network operations center where EA components are physically located.",
+ q:"Which key element of the Security and Privacy Program does this audit cover?",
+ opts:["Information security","Personnel security","Operational security","Physical protection"], a:3,
+ why:"Physical protection covers building security, network operations centers / server rooms / wiring closets, and cable plants — controlling access to where EA components physically live. (Personnel security covers user authentication and security training.)"}
+];
+
+/* ------------------------------------------------------------------ */
+/*  STATE + LOGIC                                                      */
+/* ------------------------------------------------------------------ */
+let mode = "all";          // "all" or chapter number
+let pool = [];             // array of BANK indices in play order
+let cur = 0;               // pointer into pool
+let answered = false;
+let optOrder = [];         // display order of the current question's options
+let results = [];          // {bankIdx, ok}
+
+const $ = id => document.getElementById(id);
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function buildChips(){
+  const box = $("chips");
+  box.innerHTML = "";
+  const mk = (key, tag, lbl) => {
+    const b = document.createElement("button");
+    b.className = "chip" + (mode===key ? " active" : "");
+    b.innerHTML = '<span class="tag">'+tag+'</span><span class="lbl">'+lbl+'</span>';
+    b.onclick = () => { mode = key; start(); };
+    box.appendChild(b);
+  };
+  mk("all", "MIXED", "All 8 chapters");
+  for(const c of Object.keys(CHAPTERS)){
+    mk(Number(c), CHAPTERS[c].short, CHAPTERS[c].label);
+  }
+}
+
+function start(customPool){
+  buildChips();
+  if(customPool){
+    pool = shuffle(customPool);
+  } else {
+    const idxs = BANK.map((q,i)=>i).filter(i => mode==="all" || BANK[i].ch===mode);
+    pool = shuffle(idxs);
+  }
+  cur = 0; results = [];
+  $("resultsCard").classList.remove("show");
+  $("quizCard").style.display = "block";
+  buildProgress();
+  renderQ();
+  updateScore();
+}
+
+function buildProgress(){
+  const p = $("progress");
+  p.innerHTML = "";
+  for(let i=0;i<pool.length;i++){
+    const s = document.createElement("div");
+    s.className = "seg";
+    p.appendChild(s);
+  }
+}
+
+function renderQ(){
+  answered = false;
+  const q = BANK[pool[cur]];
+  $("qTag").textContent = CHAPTERS[q.ch].short + " · " + CHAPTERS[q.ch].label.toUpperCase();
+  $("qCount").textContent = "Q " + (cur+1) + " / " + pool.length;
+  $("qScenario").textContent = q.scenario;
+  $("qText").textContent = q.q;
+
+  optOrder = shuffle([0,1,2,3]);
+  const box = $("qOpts");
+  box.innerHTML = "";
+  optOrder.forEach((orig, k) => {
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.innerHTML = '<span class="key">'+(k+1)+'</span><span>'+q.opts[orig]+'</span>';
+    b.onclick = () => pick(k);
+    box.appendChild(b);
+  });
+
+  const why = $("qWhy");
+  why.className = "why";
+  why.innerHTML = "";
+  $("nextBtn").classList.remove("show");
+
+  // mark progress current
+  const segs = $("progress").children;
+  for(let i=0;i<segs.length;i++){
+    if(i===cur && !segs[i].classList.contains("ok") && !segs[i].classList.contains("no")){
+      segs[i].classList.add("cur");
+    } else {
+      segs[i].classList.remove("cur");
+    }
+  }
+  $("progressLabel").textContent = (cur+1) + " of " + pool.length;
+}
+
+function pick(k){
+  if(answered) return;
+  answered = true;
+  const q = BANK[pool[cur]];
+  const ok = optOrder[k] === q.a;
+  results.push({bankIdx: pool[cur], ok});
+
+  const btns = $("qOpts").children;
+  for(let i=0;i<btns.length;i++){
+    btns[i].disabled = true;
+    if(optOrder[i] === q.a) btns[i].classList.add("good");
+    else if(i === k)        btns[i].classList.add("bad");
+    else                    btns[i].classList.add("dim");
+  }
+
+  const why = $("qWhy");
+  why.className = "why show " + (ok ? "ok" : "no");
+  why.innerHTML = "<b>" + (ok ? "CORRECT" : "NOT QUITE") + "</b>" + q.why;
+
+  const seg = $("progress").children[cur];
+  seg.classList.remove("cur");
+  seg.classList.add(ok ? "ok" : "no");
+
+  $("nextBtn").classList.add("show");
+  $("nextBtn").textContent = (cur === pool.length-1) ? "See results →" : "Next →";
+  updateScore();
+}
+
+function next(){
+  if(!answered) return;
+  if(cur < pool.length-1){ cur++; renderQ(); }
+  else showResults();
+}
+
+function updateScore(){
+  $("scoreNum").textContent = results.filter(r=>r.ok).length;
+  $("scoreOf").textContent = results.length;
+}
+
+function showResults(){
+  $("quizCard").style.display = "none";
+  const card = $("resultsCard");
+  card.classList.add("show");
+
+  const total = results.length;
+  const good = results.filter(r=>r.ok).length;
+  const pct = total ? Math.round(good/total*100) : 0;
+  $("rScore").textContent = pct + "%";
+  $("rRaw").textContent = good + " / " + total + " correct";
+  $("rMode").textContent = mode==="all" ? "MIXED · ALL CHAPTERS" : CHAPTERS[mode].short + " ONLY";
+
+  let verdict;
+  if(pct >= 85)      verdict = "Solid. Skim your weak spots, then trust your preparation.";
+  else if(pct >= 65) verdict = "Good base — drill the chapters below before the exam.";
+  else               verdict = "Go back to the study guides for the weak chapters, then retry.";
+  $("rVerdict").textContent = verdict;
+
+  // per-chapter breakdown
+  const byCh = {};
+  results.forEach(r => {
+    const c = BANK[r.bankIdx].ch;
+    byCh[c] = byCh[c] || {good:0, total:0};
+    byCh[c].total++;
+    if(r.ok) byCh[c].good++;
+  });
+
+  const box = $("rChapters");
+  box.innerHTML = "";
+  let weakest = null;
+  Object.keys(byCh).sort((a,b)=>a-b).forEach(c => {
+    const d = byCh[c];
+    const p = Math.round(d.good/d.total*100);
+    if(weakest===null || p < weakest.p) weakest = {c, p};
+    const row = document.createElement("div");
+    row.className = "chrow";
+    row.innerHTML =
+      '<div class="nm"><span>'+CHAPTERS[c].short+'</span>'+CHAPTERS[c].label+'</div>' +
+      '<div class="bar"><i class="'+(p<60?"low":"")+'" style="width:'+p+'%"></i></div>' +
+      '<div class="pct">'+d.good+'/'+d.total+'</div>';
+    box.appendChild(row);
+  });
+
+  const weakBox = $("rWeak");
+  if(weakest && weakest.p < 100 && Object.keys(byCh).length > 1){
+    weakBox.style.display = "block";
+    weakBox.innerHTML = "<b>WEAKEST CHAPTER</b>" +
+      CHAPTERS[weakest.c].short + " — " + CHAPTERS[weakest.c].label +
+      " (" + weakest.p + "%). Re-open its mindmap and study guide, then retry this chapter alone.";
+  } else {
+    weakBox.style.display = "none";
+  }
+
+  const wrong = results.filter(r=>!r.ok).map(r=>r.bankIdx);
+  $("retryWrongBtn").style.display = wrong.length ? "inline-block" : "none";
+  $("retryWrongBtn").onclick = () => start(wrong);
+  $("restartBtn").onclick = () => start();
+}
+
+$("nextBtn").onclick = next;
+
+document.addEventListener("keydown", e => {
+  if($("resultsCard").classList.contains("show")) return;
+  if(!answered && ["1","2","3","4"].includes(e.key)){
+    const i = Number(e.key)-1;
+    if($("qOpts").children[i]){ e.preventDefault(); pick(i); }
+  } else if(answered && (e.key==="Enter" || e.key===" " || e.key==="ArrowRight")){
+    e.preventDefault(); next();
+  }
+});
+
+start();
+</script>
+</body>
+</html>
